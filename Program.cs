@@ -1,4 +1,8 @@
-﻿namespace Champions_challenge;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Security.Cryptography.X509Certificates;
+using System.Xml.XPath;
+
+namespace Champions_challenge;
 
 class Program
 {
@@ -123,8 +127,350 @@ class Program
         Combat continues until one fighter reaches 0 health.
 
         */
+        int timesBeaten = 0;
+
+        string? combatStarter = "";
+        do
+        {
+
+            // Console.Clear();
+            Console.WriteLine("How many bosses can you beat? ");
+            Console.WriteLine("An enemy approaches! Type escape to shutdown, or anything else to start combat!");
+
+            combatStarter = Console.ReadLine()?.ToLower().Trim().Replace(" ", "");
+
+            if (combatStarter != "escape")
+                Combat();
+            if (Combat())
+                combatStarter = "escape";
+            else
+            {
+                timesBeaten++;
+                Console.WriteLine($"Victorious! You've beaten the boss {timesBeaten} times. \nPress enter to continue.");
+                Console.ReadLine();
+            }
+
+
+        } while (combatStarter != "escape");
+        bool Combat()
+        {
+            bool gameOver = false;
+            Random random = new();
+
+            Champion champion = new();
+
+            champion.ChampHealth = 18;
+            champion.ChampSpeed = 2;
+            champion.ChampDamage = 2;
+
+            Boss boss = new();
+
+            boss.BossSpeed = 1;
+            boss.BossHealth = 18;
+            boss.BossDamage = 2;
+
+            while (champion.ChampHealth >= 0 && boss.BossHealth >= 0)
+            {
+                int damageTaken = 0;
+
+                int champInitiative = random.Next(1, 7) + champion.ChampSpeed;
+                int bossInitiative = random.Next(1, 7) + boss.BossSpeed;
+
+                #region ifChampWinsSpeed
+                if (champInitiative >= bossInitiative)
+                {
+                    Console.WriteLine("The Champion was faster! Press any key to start their attack.");
+                    Console.Read();
+
+                    ChampionFight();
+                    if (ChampionFight().Count != 0)
+                    {
+                        foreach (int failedSave in ChampionFight())
+                        {
+                            boss.BossHealth -= champion.ChampDamage;
+                            damageTaken += champion.ChampDamage;
+                        }
+                        Console.WriteLine($"The champion dealt {damageTaken} to the boss, and the boss has {boss.BossHealth} health left.\nPress enter to continue.");
+                        Console.ReadLine();
+
+                    }
+                    else
+                    {
+                        Console.WriteLine("All saves made! No damage taken. Press enter to continue.");
+                        Console.ReadLine();
+                    }
+
+                }
+                #endregion
+
+                else
+                {
+                    Console.WriteLine("The boss strikes first! Press any key to start their attack.");
+                    Console.Read();
+                    BossFight();
+
+                    if (BossFight().Count != 0)
+                    {
+
+                        foreach (int damage in BossFight())
+                        {
+                            boss.BossHealth -= champion.ChampDamage;
+                            damageTaken += champion.ChampDamage;
+
+                        }
+                        Console.WriteLine($"{BossFight().Count} saves failed! The boss takes {damageTaken} damage, and is at {boss.BossHealth} left. \n Press enter to continue.");
+                        Console.ReadLine();
+
+                    }
+                    else
+                    {
+                        Console.WriteLine("All saves made! No damage taken. Press enter to continue.");
+                        Console.ReadLine();
+
+                    }
+                }
+                #region ifBossWinsSpeed
+                if (champInitiative < bossInitiative)
+                {
+                    Console.WriteLine("The boss strikes back! Press any key to start their attack.");
+                    Console.Read();
+                    BossFight();
+
+                    if (BossFight().Count != 0)
+                    {
+
+                        foreach (int damage in BossFight())
+                        {
+                            boss.BossHealth -= champion.ChampDamage;
+                            damageTaken += champion.ChampDamage;
+
+                        }
+                        Console.WriteLine($"{BossFight().Count} saves failed! The boss takes {damageTaken} damage, and is at {boss.BossHealth} left. \n Press enter to continue.");
+                        Console.ReadLine();
+
+                    }
+                    else
+                    {
+                        Console.WriteLine("All saves made! No damage taken. Press enter to continue.");
+                        Console.ReadLine();
+
+                    }
+
+                }
+                else
+                {
+                    Console.WriteLine("The champion strikes back! Press any key to start their attack.");
+                    Console.Read();
+                    ChampionFight();
+                    if (ChampionFight().Count != 0)
+                    {
+                        foreach (int failedSave in ChampionFight())
+                        {
+                            boss.BossHealth -= champion.ChampDamage;
+                            damageTaken += champion.ChampDamage;
+                        }
+                        Console.WriteLine($"The champion dealt {damageTaken} to the boss, and the boss has {boss.BossHealth} health left.\nPress enter to continue.");
+                        Console.ReadLine();
+
+                    }
+                    else
+                    {
+                        Console.WriteLine("All saves made! No damage taken. Press enter to continue.");
+                        Console.ReadLine();
+                    }
+                }
+
+                #endregion
+            }
+            if (champion.ChampHealth <= 0)
+            {
+                gameOver = true;
+                return gameOver;
+            }
+            else
+            {
+                gameOver = false;
+                return gameOver;
+            }
+        }
+
+        List<int> BossFight()
+        {
+
+            List<int> hitRolls = new();
+            List<int> woundRolls = new();
+            List<int> failedSaves = new();
+
+            List<int> failure = new();
+            Boss bossFight = new();
+            bossFight.BossAttackNumber = 12;
+            bossFight.BossRend = 0;
+            bossFight.BossToHit = 5;
+            bossFight.BossToWound = 3;
+
+            Champion championBoss = new();
+            championBoss.ChampSave = 4;
+
+            for (int i = 0; i <= bossFight.BossAttackNumber; i++)
+            {
+                int roll = 0;
+                roll = DiceRoll();
+                if (roll >= bossFight.BossToHit)
+                {
+                    hitRolls.Add(roll);
+                }
+            }
+
+            if (hitRolls.Count != 0)
+            {
+                Console.WriteLine($"The bossFight rolled {bossFight.BossAttackNumber} attacks, and hit {hitRolls.Count} of them.\n Press enter to roll wounds");
+                Console.ReadLine();
+
+                foreach (int hit in hitRolls)
+                {
+                    int roll = 0;
+                    roll = DiceRoll();
+                    if (roll >= bossFight.BossToWound)
+                    {
+                        woundRolls.Add(roll);
+                    }
+                }
+                if (woundRolls.Count != 0)
+                {
+
+                    Console.WriteLine($"The boss rolled {hitRolls.Count} and wounded with {woundRolls.Count} of them. \n Press enter to roll champion save");
+                    Console.ReadLine();
+                    foreach (int wound in woundRolls)
+                    {
+                        int roll = 0;
+                        roll = DiceRoll();
+                        if (roll <= championBoss.ChampSave + bossFight.BossRend)
+                        {
+                            failedSaves.Add(roll);
+                        }
+                    }
+                    return failedSaves;
+                }
+                else
+                {
+                    Console.WriteLine($"The boss could not wound. Press enter to continue.");
+                    Console.ReadLine();
+                    return failure;
+                }
+            }
+            else
+            {
+
+                Console.WriteLine($"The boss did not hit any attacks. Press enter to continue");
+                Console.ReadLine();
+                return failure;
+            }
+        }
+
+        List<int> ChampionFight()
+        {
+            List<int> hitRolls = new();
+            List<int> woundRolls = new();
+            List<int> failedSaves = new();
+            List<int> failure = new();
+
+            Champion championFight = new();
+            championFight.ChampAttackNumber = 8;
+            championFight.ChampToHit = 4;
+            championFight.ChampToWound = 4;
+            championFight.ChampRend = 1;
+
+            Boss bossChamp = new();
+
+            bossChamp.BossSave = 4;
+            for (int i = 0; i <= championFight.ChampAttackNumber; i++)
+            {
+                int roll = 0;
+                roll = DiceRoll();
+                if (roll >= championFight.ChampToHit)
+                {
+                    hitRolls.Add(roll);
+                }
+            }
+
+            if (hitRolls.Count != 0)
+            {
+                Console.WriteLine($"The Champion rolled {championFight.ChampAttackNumber} attacks, and hit {hitRolls.Count} of them.\n Press enter to roll wounds");
+                Console.Read();
+
+                foreach (int hit in hitRolls)
+                {
+                    int roll = 0;
+                    roll = DiceRoll();
+                    if (roll >= championFight.ChampToWound)
+                    {
+                        woundRolls.Add(roll);
+                    }
+                }
+                if (woundRolls.Count != 0)
+                {
+
+                    Console.WriteLine($"The Champion rolled {hitRolls.Count} wounds and wounded with {woundRolls.Count} of them. \n Press enter to roll boss save");
+                    Console.ReadLine();
+
+
+                    foreach (int wound in woundRolls)
+                    {
+                        int roll = 0;
+                        roll = DiceRoll();
+                        if (roll <= bossChamp.BossSave + championFight.ChampRend)
+                        {
+                            failedSaves.Add(roll);
+                        }
+                    }
+                    return failedSaves;
+
+                }
+                else
+                {
+                    Console.WriteLine($"The Champion could not wound. Press enter to continue.");
+                    Console.ReadLine();
+                    return failure;
+                }
+            }
+            else
+            {
+                Console.WriteLine($"The Champion did not hit any. Press enter to continue");
+                Console.ReadLine();
+                return failure;
+            }
+        }
+
+        int DiceRoll()
+        {
+            Random dice = new();
+            int result = dice.Next(1, 7);
+            return result;
+        }
+    }
+    class Champion
+    {
+        public int ChampAttackNumber { get; set; }
+        public int ChampToHit { get; set; }
+        public int ChampToWound { get; set; }
+        public int ChampRend { get; set; }
+        public int ChampDamage { get; set; }
+        public int ChampSave { get; set; }
+        public int ChampHealth { get; set; }
+        public int ChampSpeed { get; set; }
     }
 
+    class Boss
+    {
+        public int BossAttackNumber { get; set; }
+        public int BossToHit { get; set; }
+        public int BossToWound { get; set; }
+        public int BossRend { get; set; }
+        public int BossSave { get; set; }
+        public int BossHealth { get; set; }
+        public int BossSpeed { get; set; }
+        public int BossDamage { get; set; }
+    }
 }
 /*
 
